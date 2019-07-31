@@ -10,7 +10,7 @@ from flask_restful import inputs
 from flask_restful import request
 from flask_restful.reqparse import RequestParser
 from werkzeug.datastructures import FileStorage
-
+from flask import render_template
 
 class Hello(Resource):
     # 定义输出结果的结构及属性，原则上比使用jsonify专业
@@ -56,6 +56,17 @@ class World(Resource):
 
 
 class Upload(Resource):
+
+    def get(self):
+        # 这里是在API内部，原则上不应当返回页面，主要是为了测试上传功能才被迫如此
+        # 也可以在上面一层进行处理，这样就比较规范了
+        # 实际上flask-restful默认返回的类型都是application/json
+        # 不修改这个头部信息是不能看到正常的页面的
+        response = make_response(render_template('upload.html'))
+        response.headers["Content-Type"]= 'text/html'
+        return response
+
+
     def post(self):
         parser = RequestParser()
         parser.add_argument('file', type=FileStorage, location='files')

@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload</title>
+    <title>Upload Top Level</title>
 </head>
 <body>
 <form method="POST" action="/v1/upload" enctype="multipart/form-data">
-    <input type="file" id="file">
+<!--    name="file"在POST是变量名是file，id="file"无法确认变量名-->
+    <input type="file" name="file">
     <input type="submit">
 </form>
 </body>
