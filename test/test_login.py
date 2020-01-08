@@ -1,5 +1,5 @@
 import unittest
-
+from base64 import b64encode
 import requests
 
 
@@ -19,7 +19,8 @@ class MyTestCase(unittest.TestCase):
     def test_login_OK(self):
         """正常登录"""
         url = 'http://127.0.0.1:8080/v2/login'
-        payload = {'userid': 'james', 'password': 'aGVsbG93b3JsZA=='}
+        password = b'helloworld'
+        payload = {'userid': 'james', 'password': b64encode(password).decode()}
         r = requests.post(url, json=payload)
         if r.status_code == 200:
             res = r.json()
