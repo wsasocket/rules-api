@@ -20,6 +20,7 @@ class _UserManagerInterface(object):
         self.user_token = dict()
         self.user_right = dict()
         self.user_passwd = dict()
+        self.TIMEOUT = 1800
         self._setup_user_right()
         self._setup_user_list()
 
@@ -66,16 +67,20 @@ class _UserManagerInterface(object):
             pass
         UserManager._operate_lock = True
         for uuid in self.user_token.keys():
-            delta_time = datetime.now() - self.user_token[uuid][0]
-            if delta_time.total_seconds() // 60 > 30:
-                self.user_token.pop(uuid)
+            delta_time = (t := datetime.now()) - self.user_token[uuid][0]
+            if delta_time.total_seconds() > self.TIMEOUT:
+                # 注意: 在迭代过程中删除是不行的
+                # self.user_token.pop(uuid)
+                self.user_token = {k: self.user_token[k] for k in self.user_token if k != uuid}
+            else:
+                self.user_token[uuid][0] = t
         UserManager._operate_lock = False
 
     def check_user_token(self, uuid):
         # 仅仅是查询，不需要查看lock
         if uuid in self.user_token.keys():
             delta_time = datetime.now() - self.user_token[uuid][0]
-            if delta_time.total_seconds() // 60 > 30:
+            if delta_time.total_seconds() > self.TIMEOUT:
                 return TOKEN_TIME_OUT
         else:
             return TOKEN_INVALIDATE
@@ -97,6 +102,14 @@ class _UserManagerInterface(object):
             return self.user_right[user]
         return None
 
+    @property
+    def timeout(self):
+        return self.TIMEOUT
+
+    @timeout.setter
+    def timeout(self, t, /):
+        self.TIMEOUT = t
+
     def _setup_user_right(self):
         # 初始化阶段装载到内存中
         # TODO 增加数据库查询功能，设置对应的权限清单
@@ -113,4 +126,19 @@ class _UserManagerInterface(object):
 
 
 class UserManager(_UserManagerInterface):
+    """
+    UserManager的使用方法
+    这个类主要功能是维护一个管理用户信息的对象。
+    主要功能：
+    1、生产/更新/检查用户的TOKEN，用于维护用户登陆状态
+    2、获取/检查用户对各个模块的使用权限
+    3、刷新对象维护的TOKEN列表，过期删除
+    在初始化阶段需要从数据库或其他数据源获取用户的口令HASH和权限，可以根据不同的数据来源完备下列两个函数
+    _setup_user_right()
+    _setup_user_list()
+    在全局需要一个定时器（计划执行）机制，用于刷新TOKEN
+    refresh_user_token
+    用户对接口的操作也需要对TOKEN进行更新，保证TOKEN的过期时间在操作行为后的30分钟，如果不使用，每隔30分钟需要登陆一次
+    update_user_token
+    """
     pass
